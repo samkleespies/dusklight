@@ -42,7 +42,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [java-kotlin, python]
+        language: [actions, java-kotlin, python]
     steps:
       - uses: actions/checkout@v6
       - uses: github/codeql-action/init@v4
