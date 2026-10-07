@@ -317,6 +317,8 @@ if (DUSK_ENABLE_SENTRY_NATIVE)
         GIT_SHALLOW TRUE
         GIT_PROGRESS TRUE
         GIT_SUBMODULES_RECURSE TRUE
+        PATCH_COMMAND ${CMAKE_COMMAND} -DSOURCE_DIR=<SOURCE_DIR>
+            -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/ApplySentryPatch.cmake
     )
     if (NOT sentry_native_POPULATED)
         FetchContent_Populate(sentry_native)
