@@ -1,0 +1,29 @@
+--- a/vendor/libunwind/src/elfxx.c
++++ b/vendor/libunwind/src/elfxx.c
+@@ -65,15 +65,20 @@
+ static Elf_W (Shdr)*
+ elf_w (section_table) (const struct elf_image *ei)
+ {
+-  Elf_W (Ehdr) *ehdr = ei->image;
++  Elf_W (Ehdr) *ehdr;
+   Elf_W (Off) soff;
+ 
++  if (!ei->image || ei->size < sizeof (Elf_W (Ehdr)))
++    return NULL;
++  ehdr = ei->image;
+   soff = ehdr->e_shoff;
+-  if (soff + ehdr->e_shnum * ehdr->e_shentsize > ei->size)
+-    {
+-      Debug (1, "section table outside of image? (%lu > %lu)\n",
+-             (unsigned long) (soff + ehdr->e_shnum * ehdr->e_shentsize),
+-             (unsigned long) ei->size);
++  /* Validate the entry size before interpreting entries as Elf_W (Shdr).
++     Subtraction and division also avoid overflowing offset + count * size. */
++  if (ehdr->e_shentsize != sizeof (Elf_W (Shdr))
++      || soff > ei->size
++      || ehdr->e_shnum > (ei->size - soff) / sizeof (Elf_W (Shdr)))
++    {
++      Debug (1, "section table outside of image or invalid entry size\n");
+       return NULL;
+     }
+ 
