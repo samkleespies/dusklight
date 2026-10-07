@@ -446,6 +446,9 @@ bool dStage_roomControl_c::resetArchiveBank(int i_bank) {
 
 void dStage_roomControl_c::roomDzs_c::create(u8 i_num) {
     JUT_ASSERT(1112, !m_num && 0 < i_num && i_num < 64);
+    if (m_num != 0 || i_num == 0 || i_num >= 64) {
+        return;
+    }
     m_dzs = JKR_NEW_ARRAY_ARGS(void*, i_num, mDoExt_getArchiveHeap(), -4);
     JUT_ASSERT(1114, m_dzs != NULL);
 
@@ -474,7 +477,7 @@ void dStage_roomControl_c::roomDzs_c::remove() {
 }
 
 void* dStage_roomControl_c::roomDzs_c::add(u8 i_no, u8 roomNo) {
-    if (m_num == 0) {
+    if (m_num == 0 || i_no >= m_num) {
         return NULL;
     }
 
@@ -2383,15 +2386,22 @@ static void readMult(dStage_dt_c* i_stage, dStage_Multi_c* multi, bool useOldRes
     };
 
     if (multi != NULL) {
+        const int entry_count = multi->num;
+        if (entry_count <= 0 || entry_count >= 64) {
+            return;
+        }
         dStage_Mult_info* info = multi->m_entries;
+        if (info == NULL) {
+            return;
+        }
 
         if (dStage_stagInfo_GetUpButton(dComIfGp_getStage()->getStagInfo()) == 0 ||
             dStage_stagInfo_GetUpButton(dComIfGp_getStage()->getStagInfo()) == 6)
         {
-            dStage_roomControl_c::createRoomDzs(multi->num);
+            dStage_roomControl_c::createRoomDzs(static_cast<u8>(entry_count));
         }
 
-        for (s8 i = 0; i < multi->num; i++) {
+        for (int i = 0; i < entry_count; i++) {
             void* dzs = dStage_roomControl_c::addRoomDzs(i, info->mRoomNo);
 
             if (dzs == NULL) {
