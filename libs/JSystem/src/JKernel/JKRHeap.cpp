@@ -129,8 +129,8 @@ bool JKRHeap::initArena(char** memory, u32* size, int maxHeaps) {
     void* arenaLo = OSGetArenaLo();
     void* arenaHi = OSGetArenaHi();
 
-    OSReport("[JKRHeap] initArena: Lo=%p Hi=%p Size=0x%X\n", arenaLo, arenaHi,
-             (uintptr_t)arenaHi - (uintptr_t)arenaLo);
+    OSReport("[JKRHeap] initArena: Lo=%p Hi=%p Size=0x%zx\n", arenaLo, arenaHi,
+        static_cast<size_t>((uintptr_t)arenaHi - (uintptr_t)arenaLo));
 
     if (arenaLo == arenaHi)
         return false;

@@ -32,7 +32,7 @@ Mtx g_mDoMtx_identity = {
 
 #if VERSION != VERSION_GCN_JPN
 static void dummy() {
-    OSReport("mDoMtx_Dump %s\n");
+    OSReport("%s", "mDoMtx_Dump %s\n");
 }
 #endif
 

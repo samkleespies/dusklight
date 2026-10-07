@@ -3688,7 +3688,7 @@ static BOOL daMP_THPPlayerOpen(char const* filename, BOOL onMemory) {
     }
 
     if (daMP_ActivePlayer.open) {
-        OSReport("Can't open %s. Because thp file have already opened.\n");
+        OSReport("Can't open %s. Because thp file have already opened.\n", filename);
         return 0;
     }
 
