@@ -145,6 +145,16 @@ int main() {
         }
         assert(transfers == unsigned(channels * (loop ? 6 : 3)) && !hasErrored);
     }
+    {
+        auto stream = fixture();
+        aram.resize(block_bytes * 4); // Exactly two ARAM blocks per stereo channel.
+        assert(stream.headerLoad(aram.size(), -1));
+        for (int i = 0; i < 3; ++i) {
+            stream.mPendingLoadTasks = 1;
+            assert(stream.load());
+        }
+        assert(transfers == 6 && !hasErrored);
+    }
     for (int scenario = 0; scenario < 12; ++scenario) {
         auto stream = fixture();
         auto h = valid_header;
