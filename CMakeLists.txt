@@ -191,7 +191,7 @@ if (MSVC)
 endif ()
 
 if (DUSK_MOVIE_SUPPORT)
-    find_package(libjpeg-turbo 3.0 CONFIG QUIET)
+    find_package(libjpeg-turbo 3.1.4.1 CONFIG QUIET)
     if (libjpeg-turbo_FOUND)
         message(STATUS "dusklight: Using system libjpeg-turbo")
     else ()
@@ -237,8 +237,8 @@ if (DUSK_MOVIE_SUPPORT)
             endif ()
         endforeach ()
         ExternalProject_Add(libjpeg-turbo-ext
-            URL https://github.com/libjpeg-turbo/libjpeg-turbo/archive/refs/tags/3.1.0.tar.gz
-            URL_HASH SHA256=35fec2e1ddfb05ecf6d93e50bc57c1e54bc81c16d611ddf6eff73fff266d8285
+            URL https://github.com/libjpeg-turbo/libjpeg-turbo/releases/download/3.1.4.1/libjpeg-turbo-3.1.4.1.tar.gz
+            URL_HASH SHA256=ecae8008e2cc9ade2f2c1bb9d5e6d4fb73e7c433866a056bd82980741571a022
             CMAKE_ARGS ${_jpeg_cmake_args}
             BUILD_BYPRODUCTS ${_jpeg_lib}
         )
