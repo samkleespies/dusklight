@@ -143,8 +143,8 @@ void JAISound::die_JAISound_() {
 
 void JAISound::increasePrepareCount_JAISound_() {
     if ((++prepareCount_ & 0xFF) == 0) {
-        JASReport("It cost %d steps to prepare Sound(ID:%08x, Address%08x).\n", prepareCount_,
-                  *(u32*)&soundID_, this);
+        JASReport("It cost %d steps to prepare Sound(ID:%08x, Address%p).\n", prepareCount_,
+            *(u32*)&soundID_, static_cast<const void*>(this));
     }
 }
 

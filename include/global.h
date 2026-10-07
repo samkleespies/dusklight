@@ -131,7 +131,11 @@ inline int __builtin_clz(unsigned int v) {
 static const float INF = 2000000000.0f;
 
 // hack to make strings with no references compile properly
+#if TARGET_PC
+#define DEAD_STRING(s) OSReport("%s", s)
+#else
 #define DEAD_STRING(s) OSReport(s)
+#endif
 
 #define READU32_BE(ptr, offset) \
     (((u32)ptr[offset] << 24) | ((u32)ptr[offset + 1] << 16) | ((u32)ptr[offset + 2] << 8) | (u32)ptr[offset + 3]);

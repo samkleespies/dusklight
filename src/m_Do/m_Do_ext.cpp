@@ -1002,8 +1002,8 @@ u32 mDoExt_adjustSolidHeap(JKRSolidHeap* i_heap) {
     JKRHeap* parentHeap = i_heap->getParent();
     if (parentHeap == NULL || parentHeap->getHeapType() != 'EXPH') {
         // "Can't adjust because parent heap isn't Exp %08x %08x\n"
-        OSReport_Error("親ヒープがExpでないのでアジャストできません %08x %08x\n", i_heap,
-                       parentHeap);
+        OSReport_Error("親ヒープがExpでないのでアジャストできません %p %p\n",
+            static_cast<const void*>(i_heap), static_cast<const void*>(parentHeap));
         return -1;
     }
 
@@ -1011,7 +1011,7 @@ u32 mDoExt_adjustSolidHeap(JKRSolidHeap* i_heap) {
     s32 result = i_heap->adjustSize();
     if (result < 0) {
         // "adjustSize failure %08x\n"
-        OSReport_Error("adjustSize失敗 %08x\n", i_heap);
+        OSReport_Error("adjustSize失敗 %p\n", static_cast<const void*>(i_heap));
         return -1;
     }
     u32 actualSize = i_heap->getHeapSize();

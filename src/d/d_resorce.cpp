@@ -686,7 +686,8 @@ f32 dummy(int x) {
 }
 
 void dRes_info_c::dump_long(dRes_info_c* i_resInfo, int i_infoNum) {
-    JUTReportConsole_f("dRes_info_c::dump_long %08x %d\n", i_resInfo, i_infoNum);
+    JUTReportConsole_f(
+        "dRes_info_c::dump_long %p %d\n", static_cast<const void*>(i_resInfo), i_infoNum);
     JUTReportConsole_f("No Command Archive  ArcHeader(size) SolidHeap(size) Resource Cnt ArchiveName\n");
 
     for (int i = 0; i < i_infoNum; i++) {
@@ -706,17 +707,12 @@ void dRes_info_c::dump_long(dRes_info_c* i_resInfo, int i_infoNum) {
                 blockSize2 = myGetMemBlockSize0((void*)dataHeap);
             }
 
-            JUTReportConsole_f("%2d %08x %08x %08x(%6x) %08x(%5x) %08x %3d %s\n",
-                               i,
-                               i_resInfo->getDMCommand(),
-                               archive,
-                               header,
-                               blockSize1,
-                               dataHeap,
-                               blockSize2,
-                               i_resInfo->mRes,
-                               i_resInfo->getCount(),
-                               i_resInfo->getArchiveName());
+            JUTReportConsole_f("%2d %p %p %p(%6x) %p(%5x) %p %3d %s\n", i,
+                static_cast<const void*>(i_resInfo->getDMCommand()),
+                static_cast<const void*>(archive), static_cast<const void*>(header), blockSize1,
+                static_cast<const void*>(dataHeap), blockSize2,
+                static_cast<const void*>(i_resInfo->mRes), i_resInfo->getCount(),
+                i_resInfo->getArchiveName());
         }
         i_resInfo++;
     }
@@ -727,7 +723,7 @@ void dRes_info_c::dump(dRes_info_c* i_resInfo, int i_infoNum) {
     int totalHeapSize;
     int arcHeaderSize;
     int heapSize;
-    JUTReportConsole_f("dRes_info_c::dump %08x %d\n", i_resInfo, i_infoNum);
+    JUTReportConsole_f("dRes_info_c::dump %p %d\n", static_cast<const void*>(i_resInfo), i_infoNum);
     JUTReportConsole_f("No ArchiveSize(KB) SolidHeapSize(KB) Cnt ArchiveName\n");
 
     totalArcHeaderSize = 0;

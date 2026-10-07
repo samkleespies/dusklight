@@ -159,7 +159,7 @@ void* JKRSolidHeap::allocFromTail(u32 size, int alignment) {
 }
 
 void JKRSolidHeap::do_free(void* ptr) {
-    JUTWarningConsole_f("free: cannot free memory block (%08x)\n", ptr);
+    JUTWarningConsole_f("free: cannot free memory block (%p)\n", static_cast<const void*>(ptr));
 }
 
 void JKRSolidHeap::do_freeAll(void) {
@@ -207,12 +207,14 @@ void JKRSolidHeap::do_fillFreeArea() {
 }
 
 s32 JKRSolidHeap::do_resize(void* ptr, u32 newSize) {
-    JUTWarningConsole_f("resize: cannot resize memory block (%08x: %d)\n", ptr, newSize);
+    JUTWarningConsole_f(
+        "resize: cannot resize memory block (%p: %d)\n", static_cast<const void*>(ptr), newSize);
     return -1;
 }
 
 s32 JKRSolidHeap::do_getSize(void* ptr) {
-    JUTWarningConsole_f("getSize: cannot get memory block size (%08x)\n", ptr);
+    JUTWarningConsole_f(
+        "getSize: cannot get memory block size (%p)\n", static_cast<const void*>(ptr));
     return -1;
 }
 
@@ -236,8 +238,8 @@ bool JKRSolidHeap::dump(void) {
 
     lock();
     s32 htSize = (mSolidHead - mStart) + (mEnd - mSolidTail);
-    JUTReportConsole_f("head %08x: %08x\n", mStart, (mSolidHead - mStart));
-    JUTReportConsole_f("tail %08x: %08x\n", mSolidTail, (mEnd - mSolidTail));
+    JUTReportConsole_f("head %p: %td\n", static_cast<const void*>(mStart), (mSolidHead - mStart));
+    JUTReportConsole_f("tail %p: %td\n", static_cast<const void*>(mSolidTail), (mEnd - mSolidTail));
     JUTReportConsole_f("%d / %d bytes (%6.2f%%) used\n", htSize, mSize, f32(htSize) / f32(mSize) * 100.0f);
     unlock();
 
