@@ -239,7 +239,8 @@ void* JKRExpHeap::do_alloc(u32 size, int alignment) {
 
         const JSUTree<JKRHeap>& tree = getHeapTree();
         for (JSUTreeIterator iter(tree.getFirstChild()); iter != tree.getEndChild(); ++iter) {
-            OSReport_Error("%08X | %08X | %s\n", iter->getStartAddr(), iter->getEndAddr(), iter->getName());
+            OSReport_Error("%p | %p | %s\n", static_cast<const void*>(iter->getStartAddr()),
+                static_cast<const void*>(iter->getEndAddr()), iter->getName());
         }
 
         CRASH("Aborting due to allocation failure!");
@@ -822,8 +823,8 @@ void JKRExpHeap::joinTwoBlocks(CMemBlock* block) {
     CMemBlock* next = block->mNext;
     uintptr_t nextAddr = (uintptr_t)next - (next->mFlags & 0x7f);
     if (endAddr > nextAddr) {
-        JUTWarningConsole_f(":::Heap may be broken. (block = %x)", block);
-        OS_REPORT(":::block = %x\n", block);
+        JUTWarningConsole_f(":::Heap may be broken. (block = %p)", static_cast<const void*>(block));
+        OS_REPORT(":::block = %p\n", static_cast<const void*>(block));
         OS_REPORT(":::joinTwoBlocks [%x %x %x][%x %x %x]\n", block, block->mFlags, block->size, block->mNext, block->mNext->mFlags, block->mNext->size);
         OS_REPORT(":::: endAddr = %x\n", endAddr);
         OS_REPORT(":::: nextAddr = %x\n", nextAddr);
@@ -853,27 +854,29 @@ bool JKRExpHeap::check() {
     for (CMemBlock* block = mHeadUsedList; block; block = block->mNext) {
         if (block->mMagic != 'HM') {
             ok = false;
-            JUTWarningConsole_f(":::addr %08x: bad heap signature. (%c%c)\n", block,
-                                JSUHiByte(block->mMagic), JSULoByte(block->mMagic));
+            JUTWarningConsole_f(":::addr %p: bad heap signature. (%c%c)\n",
+                static_cast<const void*>(block), JSUHiByte(block->mMagic),
+                JSULoByte(block->mMagic));
         }
 
         if (block->mNext) {
             if (block->mNext->mMagic != 'HM') {
                 ok = false;
-                JUTWarningConsole_f(":::addr %08x: bad next pointer (%08x)\nabort\n", block,
-                                    block->mNext);
+                JUTWarningConsole_f(":::addr %p: bad next pointer (%p)\nabort\n",
+                    static_cast<const void*>(block), static_cast<const void*>(block->mNext));
                 break;
             }
             if (block->mNext->mPrev != block) {
                 ok = false;
-                JUTWarningConsole_f(":::addr %08x: bad previous pointer (%08x)\n", block->mNext,
-                                    block->mNext->mPrev);
+                JUTWarningConsole_f(":::addr %p: bad previous pointer (%p)\n",
+                    static_cast<const void*>(block->mNext),
+                    static_cast<const void*>(block->mNext->mPrev));
             }
         } else {
             if (mTailUsedList != block) {
                 ok = false;
-                JUTWarningConsole_f(":::addr %08x: bad used list(REV) (%08x)\n", block,
-                                    mTailUsedList);
+                JUTWarningConsole_f(":::addr %p: bad used list(REV) (%p)\n",
+                    static_cast<const void*>(block), static_cast<const void*>(mTailUsedList));
             }
         }
         totalBytes += sizeof(CMemBlock) + block->size + block->getAlignment();
@@ -884,19 +887,21 @@ bool JKRExpHeap::check() {
         if (block->mNext) {
             if (block->mNext->mPrev != block) {
                 ok = false;
-                JUTWarningConsole_f(":::addr %08x: bad previous pointer (%08x)\n", block->mNext,
-                                    block->mNext->mPrev);
+                JUTWarningConsole_f(":::addr %p: bad previous pointer (%p)\n",
+                    static_cast<const void*>(block->mNext),
+                    static_cast<const void*>(block->mNext->mPrev));
             }
 
             if ((uintptr_t)block + block->size + sizeof(CMemBlock) > (uintptr_t)block->mNext) {
                 ok = false;
-                JUTWarningConsole_f(":::addr %08x: bad block size (%08x)\n", block, block->size);
+                JUTWarningConsole_f(":::addr %p: bad block size (%08x)\n",
+                    static_cast<const void*>(block), block->size);
             }
         } else {
             if (mTailFreeList != block) {
                 ok = false;
-                JUTWarningConsole_f(":::addr %08x: bad used list(REV) (%08x)\n", block,
-                                    mTailFreeList);
+                JUTWarningConsole_f(":::addr %p: bad used list(REV) (%p)\n",
+                    static_cast<const void*>(block), static_cast<const void*>(mTailFreeList));
             }
         }
 #if DEBUG
@@ -936,15 +941,16 @@ bool JKRExpHeap::dump() {
 
     for (CMemBlock* block = mHeadUsedList; block; block = block->mNext) {
         if (block->mMagic != 'HM') {
-            JUTReportConsole_f("xxxxx %08x: --------  --- ---  (-------- --------)\nabort\n",
-                               block);
+            JUTReportConsole_f("xxxxx %p: --------  --- ---  (-------- --------)\nabort\n",
+                static_cast<const void*>(block));
             break;
         }
 
-        JUTReportConsole_f("%s %08x: %08x  %3d %3d  (%08x %08x)\n",
-                           block->isTempMemBlock() ? " temp" : "alloc", block->getContent(),
-                           block->size, block->mGroupId, block->getAlignment(), block->mPrev,
-                           block->mNext);
+        JUTReportConsole_f("%s %p: %08x  %3d %3d  (%p %p)\n",
+            block->isTempMemBlock() ? " temp" : "alloc",
+            static_cast<const void*>(block->getContent()), block->size, block->mGroupId,
+            block->getAlignment(), static_cast<const void*>(block->mPrev),
+            static_cast<const void*>(block->mNext));
         usedBytes += sizeof(CMemBlock) + block->size + block->getAlignment();
         usedCount++;
     }
@@ -955,9 +961,10 @@ bool JKRExpHeap::dump() {
     }
 
     for (CMemBlock* block = mHeadFreeList; block; block = block->mNext) {
-        JUTReportConsole_f("%s %08x: %08x  %3d %3d  (%08x %08x)\n", " free", block->getContent(),
-                           block->size, block->mGroupId, block->getAlignment(), block->mPrev,
-                           block->mNext);
+        JUTReportConsole_f("%s %p: %08x  %3d %3d  (%p %p)\n", " free",
+            static_cast<const void*>(block->getContent()), block->size, block->mGroupId,
+            block->getAlignment(), static_cast<const void*>(block->mPrev),
+            static_cast<const void*>(block->mNext));
         freeCount++;
     }
 
@@ -993,13 +1000,16 @@ bool JKRExpHeap::dump_sort() {
             }
 
             if (block->mMagic != 'HM') {
-                JUTReportConsole_f("xxxxx %08x: --------  --- ---  (-------- --------)\nabort\n",
-                                   var1);
+                JUTReportConsole_f("xxxxx %p: --------  --- ---  (-------- --------)\nabort\n",
+                    static_cast<const void*>(var1));
                 break;
             }
 
-            JUTReportConsole_f("%s %08x: %08x  %3d %3d  (%08x %08x)\n", block->isTempMemBlock() ? " temp" : "alloc", block->getContent(), block->size,
-                               block->mGroupId, block->getAlignment(), block->mPrev, block->mNext);
+            JUTReportConsole_f("%s %p: %08x  %3d %3d  (%p %p)\n",
+                block->isTempMemBlock() ? " temp" : "alloc",
+                static_cast<const void*>(block->getContent()), block->size, block->mGroupId,
+                block->getAlignment(), static_cast<const void*>(block->mPrev),
+                static_cast<const void*>(block->mNext));
             usedBytes += sizeof(CMemBlock) + block->size + block->getAlignment();
             usedCount++;
             var1 = block;
@@ -1012,9 +1022,10 @@ bool JKRExpHeap::dump_sort() {
     }
 
     for (CMemBlock* block = mHeadFreeList; block; block = block->mNext) {
-        JUTReportConsole_f("%s %08x: %08x  %3d %3d  (%08x %08x)\n", " free", block->getContent(),
-                           block->size, block->mGroupId, block->getAlignment(), block->mPrev,
-                           block->mNext);
+        JUTReportConsole_f("%s %p: %08x  %3d %3d  (%p %p)\n", " free",
+            static_cast<const void*>(block->getContent()), block->size, block->mGroupId,
+            block->getAlignment(), static_cast<const void*>(block->mPrev),
+            static_cast<const void*>(block->mNext));
         freeCount++;
     }
 

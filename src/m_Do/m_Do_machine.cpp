@@ -351,9 +351,8 @@ static void myMemoryErrorRoutine(void* p_heap, u32 size, int alignment) {
     if (notSolidHeap) {
         // "Error: Can't allocate memory %d(0x%x)Bytes, %d Byte Alignment from %08x\n"
 #if TARGET_PC
-        OSReport_Error(
-            "Error: Can't allocate memory %d(0x%x)Bytes, %d Byte Alignment from %08x\n",
-            size, size, alignment, p_heap);
+        OSReport_Error("Error: Can't allocate memory %d(0x%x)Bytes, %d Byte Alignment from %p\n",
+            size, size, alignment, static_cast<const void*>(p_heap));
 #else
         OSReport_Error(
             "エラー: メモリを確保できません %d(0x%x)バイト、 %d バイトアライメント from %08x\n",
@@ -395,7 +394,8 @@ static void myMemoryErrorRoutine(void* p_heap, u32 size, int alignment) {
 
 void myHeapCheckRecursive(JKRHeap* p_heap) {
     if (!p_heap->check()) {
-        OSReport_Error("error in %08x(%s)\n", p_heap, myGetHeapTypeByString(p_heap));
+        OSReport_Error(
+            "error in %p(%s)\n", static_cast<const void*>(p_heap), myGetHeapTypeByString(p_heap));
     }
 
     for (JSUTree<JKRHeap>* i = p_heap->getHeapTree().getFirstChild(); i != NULL; i = i->getNextChild()) {
@@ -728,8 +728,8 @@ static void my_PrintHeap(char const* heapName, u32 heapSize) {
 
 void my_SysPrintHeap(char const* message, void* start, u32 size) {
     uintptr_t end = (uintptr_t)start + size;
-    OSReport_System("\x1b[32m%-24s = %08x-%08x size=%d KB\n\x1b[m", message, start,
-                    end, size / 1024);
+    OSReport_System("\x1b[32m%-24s = %p-%zx size=%d KB\n\x1b[m", message,
+        static_cast<const void*>(start), static_cast<size_t>(end), size / 1024);
 }
 
 #if DEBUG

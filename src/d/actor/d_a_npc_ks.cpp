@@ -3057,7 +3057,7 @@ static void demo_camera(npc_ks_class* i_this) {
 
             if (i_this->field_0xbdc == 0 && player->current.pos.x >= 12626.0f) {
                 i_this->field_0xbdc = 1;
-                JUTReport(300, 220, " PL IN %d");
+                JUTReport(300, 220, " PL IN");
                 brg_p = (obj_brg_class *)fopAcM_SearchByName(44);
                 if (brg_p != NULL) {
                     brg_p->field_0xaf1c = 4;

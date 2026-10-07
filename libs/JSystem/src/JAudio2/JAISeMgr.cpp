@@ -303,8 +303,8 @@ bool JAISeMgr::startSound(JAISoundID id, JAISoundHandle* handle, const JGeometry
     JAISe* se = newSe_(category, priority);
     if (se == NULL) {
         #if !PLATFORM_SHIELD
-        JASReport("cannot new Se %08x.", id.id_.composite_);
-        #endif
+        JASReport("cannot new Se %08x.", static_cast<u32>(id.id_.composite_));
+#endif
         return false;
     } 
 

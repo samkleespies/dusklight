@@ -335,7 +335,8 @@ void JUTException::showStack(OSContext* context) {
             return;
         }
 
-        sConsole->print_f("%08X:  %08X    %08X\n", stackPointer, stackPointer[0], stackPointer[1]);
+        sConsole->print_f("%p:  %08X    %08X\n", static_cast<const void*>(stackPointer),
+            stackPointer[0], stackPointer[1]);
         showMapInfo_subroutine(stackPointer[1], false);
         JUTConsoleManager::getManager()->drawDirect(true);
         waitTime(mPrintWaitTime1);
@@ -648,10 +649,11 @@ void JUTException::printContext(OSError error, OSContext* context, u32 dsisr, u3
     }
 
     if (error < (OS_ERROR_MACHINE_CHECK | __OS_EXCEPTION_FLOATING_POINT_EXCEPTION)) {
-        sConsole->print_f("******** EXCEPTION OCCURRED! ********\nFrameMemory:%XH\n",
-                          getFrameMemory());
+        sConsole->print_f("******** EXCEPTION OCCURRED! ********\nFrameMemory:%p\n",
+            static_cast<const void*>(getFrameMemory()));
     } else {
-        sConsole->print_f("******** USER HALT ********\nFrameMemory:%XH\n", getFrameMemory());
+        sConsole->print_f("******** USER HALT ********\nFrameMemory:%p\n",
+            static_cast<const void*>(getFrameMemory()));
     }
 
     int post_callback_executed = false;

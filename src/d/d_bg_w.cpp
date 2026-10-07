@@ -121,7 +121,7 @@ void cBgW::GlobalVtx() {
 #if DEBUG
 // stripped func, needed for string data
 void cBgW::DebugLocalPos() {
-    OSReport("cBgW::DebugLocalPos() {%ff, %ff, %ff}, {%ff, %ff, %ff}\n");
+    OSReport("%s", "cBgW::DebugLocalPos() {%ff, %ff, %ff}, {%ff, %ff, %ff}\n");
 }
 #endif
 
@@ -793,10 +793,10 @@ void cBgW::Move() {
 }
 
 static void dummyString() {
-    OSReport("Label:%s\n");
-    OSReport("cBgW:%x\n");
-    OSReport("vtx num:%d\n");
-    OSReport("(%f,%f,%f)\n");
+    OSReport("%s", "Label:%s\n");
+    OSReport("%s", "cBgW:%x\n");
+    OSReport("%s", "vtx num:%d\n");
+    OSReport("%s", "(%f,%f,%f)\n");
 }
 
 void cBgW::RwgShdwDraw(int index, cBgS_ShdwDraw* pshdw) {

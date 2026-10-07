@@ -798,8 +798,11 @@ s32 JASSeqParser::cmdRegTblLoad(JASTrack* param_0, u32* param_1) {
 
 s32 JASSeqParser::cmdDump(JASTrack* param_0, u32* param_1) {
     JASSeqCtrl* seqCtrl = param_0->getSeqCtrl();
-    JASReport("--------------- JASTrack (%8x) dump ----------------", param_0);
-    JASReport(" Base: 0x%08x Cur: 0x%08x(0x%06x)", seqCtrl->getBase(), seqCtrl->getCur(), (u8*)seqCtrl->getCur() - (u8*)seqCtrl->getBase());
+    JASReport(
+        "--------------- JASTrack (%p) dump ----------------", static_cast<const void*>(param_0));
+    JASReport(" Base: %p Cur: %p(offset: %td)", static_cast<const void*>(seqCtrl->getBase()),
+        static_cast<const void*>(seqCtrl->getCur()),
+        (u8*)seqCtrl->getCur() - (u8*)seqCtrl->getBase());
     JASReport("");
     JASReport(" REG_A: 0x%04x REG_B: 0x%04x REG_S: 0x%04x", readReg(param_0, 0), readReg(param_0, 1), readReg(param_0, 2));
     JASReport(" REG_X: 0x%04x REG_Y: 0x%04x REG_F: 0x%04x", readReg(param_0, 4), readReg(param_0, 5), readReg(param_0, 3));
