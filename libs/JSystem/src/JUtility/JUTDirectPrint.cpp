@@ -104,7 +104,7 @@ void JUTDirectPrint::drawChar(int position_x, int position_y, int ch) {
         return;
     }
 
-    const size_t pixel_offset = size_t(mStride) * position_y * scale_y + position_x * scale_x;
+    const size_t pixel_offset = size_t(mStride) * position_y * scale_y + size_t(position_x) * scale_x;
     for (int y = 0; y < 7; y++) {
         u16 *pixel = mFrameBuffer + pixel_offset + size_t(mStride) * y * scale_y;
         u32 data = *font_data++ << col_index;
