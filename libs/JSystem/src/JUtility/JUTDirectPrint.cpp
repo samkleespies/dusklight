@@ -1,6 +1,7 @@
 #include "JSystem/JSystem.h" // IWYU pragma: keep
 
 #include <cstdio>
+#include <limits>
 #include <os.h>
 #include "JSystem/JKernel/JKRHeap.h"
 #include "JSystem/JUtility/JUTDirectPrint.h"
@@ -23,28 +24,24 @@ JUTDirectPrint* JUTDirectPrint::start() {
 }
 
 void JUTDirectPrint::erase(int x, int y, int width, int height) {
-    if (!this->field_0x00) {
+    if (!mFrameBuffer || width <= 0 || height <= 0) {
         return;
     }
 
-    if (400 < mFrameBufferWidth) {
-        x = x << 1;
-        width = width << 1;
-    }
-
-    if (300 < mFrameBufferHeight) {
-        y = y << 1;
-        height = height << 1;
-    }
-
-    u16* pixel = mFrameBuffer + mStride * y + x;
-    for (int i = 0; i < height; i++) {
-        for (int j = 0; j < width; j++) {
-            *pixel = 0x1080;
-            pixel = pixel + 1;
+    const s64 scale_x = mFrameBufferWidth > 400 ? 2 : 1;
+    const s64 scale_y = mFrameBufferHeight > 300 ? 2 : 1;
+    s64 left = s64(x) * scale_x;
+    s64 top = s64(y) * scale_y;
+    s64 right = left + s64(width) * scale_x;
+    s64 bottom = top + s64(height) * scale_y;
+    left = left < 0 ? 0 : left;
+    top = top < 0 ? 0 : top;
+    right = right > mFrameBufferWidth ? mFrameBufferWidth : right;
+    bottom = bottom > mFrameBufferHeight ? mFrameBufferHeight : bottom;
+    for (s64 row = top; row < bottom; row++) {
+        for (s64 col = left; col < right; col++) {
+            mFrameBuffer[size_t(row) * mStride + size_t(col)] = 0x1080;
         }
-
-        pixel += mStride - width;
     }
 }
 
@@ -84,9 +81,16 @@ u32 JUTDirectPrint::sFontData2[77] = {
 };
 
 void JUTDirectPrint::drawChar(int position_x, int position_y, int ch) {
+    if (!mFrameBuffer || position_x < 0 || position_y < 0 || ch < 0) {
+        return;
+    }
     static u32 twiceBit[4] = { 0, 3, 12, 15 };
 
     int codepoint = (100 <= ch) ? ch - 100 : ch;
+    const size_t font_words = ch < 100 ? ARRAY_SIZEU(sFontData) : ARRAY_SIZEU(sFontData2);
+    if (size_t(codepoint / 5) >= font_words / 7) {
+        return;
+    }
     int col_index = (codepoint % 5) * 6;
     int row_index = (codepoint / 5) * 7;
 
@@ -94,9 +98,15 @@ void JUTDirectPrint::drawChar(int position_x, int position_y, int ch) {
 
     int scale_x = (mFrameBufferWidth < 400) ? 1 : 2;
     int scale_y = (mFrameBufferHeight < 300) ? 1 : 2;
+    if (mFrameBufferWidth < 6 * scale_x || mFrameBufferHeight < 7 * scale_y ||
+        position_x > (mFrameBufferWidth - 6 * scale_x) / scale_x ||
+        position_y > (mFrameBufferHeight - 7 * scale_y) / scale_y) {
+        return;
+    }
 
-    u16 *pixel = mFrameBuffer + mStride * position_y * scale_y + position_x * scale_x;
+    const size_t pixel_offset = size_t(mStride) * position_y * scale_y + position_x * scale_x;
     for (int y = 0; y < 7; y++) {
+        u16 *pixel = mFrameBuffer + pixel_offset + size_t(mStride) * y * scale_y;
         u32 data = *font_data++ << col_index;
 
         if (scale_x == 1) {
@@ -130,18 +140,23 @@ void JUTDirectPrint::drawChar(int position_x, int position_y, int ch) {
 
             data <<= 2;
         }
-
-        pixel += mStride * scale_y - 6 * scale_x;
     }
 }
 
 void JUTDirectPrint::changeFrameBuffer(void* frameBuffer, u16 width, u16 height) {
+    const size_t stride = ALIGN_NEXT(size_t(width), 16);
+    if (!frameBuffer || width == 0 || height == 0 ||
+        stride > std::numeric_limits<u16>::max() ||
+        stride > std::numeric_limits<size_t>::max() / sizeof(u16) / height) {
+        frameBuffer = NULL;
+        width = height = 0;
+    }
     this->field_0x00 = frameBuffer;
     mFrameBuffer = (u16*)frameBuffer;
     mFrameBufferWidth = width;
     mFrameBufferHeight = height;
-    mStride = ALIGN_NEXT(width & 0xFFFF, 16);
-    mFrameBufferSize = (u32)mStride * (u32)mFrameBufferHeight * 2;
+    mStride = frameBuffer ? stride : 0;
+    mFrameBufferSize = size_t(mStride) * mFrameBufferHeight * sizeof(u16);
 }
 
 void JUTDirectPrint::printSub(u16 position_x, u16 position_y, char const* format, va_list args,
@@ -152,6 +167,10 @@ void JUTDirectPrint::printSub(u16 position_x, u16 position_y, char const* format
     }
 
     int buffer_length = vsnprintf(buffer, ARRAY_SIZEU(buffer), format, args);
+    // vsnprintf returns the required size, which can exceed the stored text.
+    if (buffer_length >= int(ARRAY_SIZEU(buffer))) {
+        buffer_length = int(ARRAY_SIZEU(buffer)) - 1;
+    }
     u16 x = position_x;
     if (buffer_length > 0) {
         if (clear) {

@@ -16,3 +16,5 @@ jobs:
       - uses: actions/checkout@v6
       - name: Check room metadata bounds without game assets
         run: python3 tests/room_data_bounds.py
+      - name: Check diagnostic renderer bounds with memory-backed frames
+        run: python3 tests/direct_print_bounds.py
