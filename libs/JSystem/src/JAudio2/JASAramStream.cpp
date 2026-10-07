@@ -1,5 +1,6 @@
 #include "JSystem/JSystem.h" // IWYU pragma: keep
 
+#include <climits>
 #include "JSystem/JAudio2/JASAiCtrl.h"
 #include "JSystem/JAudio2/JASAramStream.h"
 #include "JSystem/JAudio2/JASAudioThread.h"
@@ -254,12 +255,30 @@ bool JASAramStream::headerLoad(u32 aramSize, int param_1) {
     if (mIsCancelled != 0) {
         return false;
     }
-    if (DVDReadPrio(&mDvdFileInfo, sReadBuffer, sizeof(Header), 0, 1) < 0) {
+    if (!sReadBuffer || sBlockSize == 0 || sChannelMax == 0 || sChannelMax > CHANNEL_MAX ||
+        mDvdFileInfo.length < sizeof(Header)) {
+        hasErrored = true;
+        return false;
+    }
+    if (DVDReadPrio(&mDvdFileInfo, sReadBuffer, sizeof(Header), 0, 1) != sizeof(Header)) {
         JUT_WARN(420, "%s", "DVDReadPrio Failed");
         hasErrored = true;
         return false;
     }
     Header* header = (Header*)sReadBuffer;
+    // File metadata must also be checked when debug assertions are disabled.
+    if (header->tag != 'STRM' || header->format > 1 || header->bits != 16 ||
+        header->channels == 0 || header->channels > sChannelMax ||
+        header->block_size != sBlockSize || header->loop_end <= 0 ||
+        (header->loop && (header->loop_start < 0 || header->loop_start >= header->loop_end))) {
+        hasErrored = true;
+        return false;
+    }
+    const u32 aram_blocks = (aramSize / sBlockSize) / header->channels;
+    if (aram_blocks < 2) {
+        hasErrored = true;
+        return false;
+    }
     JUT_ASSERT(426, header->tag == 'STRM');
     JUT_ASSERT(427, header->format <= 1);
     JUT_ASSERT(428, header->bits == 16);
@@ -275,7 +294,12 @@ bool JASAramStream::headerLoad(u32 aramSize, int param_1) {
     mPendingLoadTasks = 0;
     mBlock = 0;
     mBlockRingIndex = 0;
-    mAramBlocksPerChannel = (aramSize / sBlockSize) / header->channels;
+    mAramBlocksPerChannel = aram_blocks;
+    if (getBlockSamples() == 0 ||
+        (mLoop && mLoopStart / getBlockSamples() >= (mLoopEnd - 1) / getBlockSamples())) {
+        hasErrored = true;
+        return false;
+    }
     mBufCount = mAramBlocksPerChannel;
     JUT_ASSERT(445, mBufCount > 0);
     mBufCount--;
@@ -319,22 +343,48 @@ bool JASAramStream::load() {
     if (mIsCancelled != 0) {
         return false;
     }
+    if (!sReadBuffer || sChannelMax == 0 || sChannelMax > CHANNEL_MAX ||
+        mChannelNum == 0 || mChannelNum > sChannelMax || mFormat > 1 ||
+        mLoopEnd == 0 || getBlockSamples() == 0) {
+        hasErrored = true;
+        return false;
+    }
     u32 loop_end_block = (mLoopEnd - 1) / getBlockSamples();
     u32 loop_start_block = mLoopStart / getBlockSamples();
     if (mBlock > loop_end_block) {
         return false;
     }
-    u32 offset = mBlock * (sBlockSize * mChannelNum + sizeof(BlockHeader)) + sizeof(Header);
-    u32 size = sBlockSize * mChannelNum + sizeof(BlockHeader);
+    const u64 block_size = u64(sBlockSize) * mChannelNum + sizeof(BlockHeader);
+    if (mBlock > (u64(INT_MAX) - sizeof(Header)) / block_size) {
+        hasErrored = true;
+        return false;
+    }
+    const u64 offset = u64(mBlock) * block_size + sizeof(Header);
+    const u64 read_capacity = (u64(sBlockSize) + sizeof(BlockHeader)) * sChannelMax;
+    if (offset > mDvdFileInfo.length || offset > INT_MAX) {
+        hasErrored = true;
+        return false;
+    }
+    u64 size = block_size;
     if (mBlock == loop_end_block) {
         size = mDvdFileInfo.length - offset;
     }
-    if (DVDReadPrio(&mDvdFileInfo, sReadBuffer, size, offset, 1) < 0) {
+    if (size < sizeof(BlockHeader) || size % 32 != 0 || size > read_capacity || size > INT_MAX ||
+        size > mDvdFileInfo.length - offset) {
+        hasErrored = true;
+        return false;
+    }
+    if (DVDReadPrio(&mDvdFileInfo, sReadBuffer, s32(size), s32(offset), 1) != s32(size)) {
         JUT_WARN(507, "%s", "DVDReadPrio Failed");
         hasErrored = true;
         return false;
     }
     BlockHeader* bhead = (BlockHeader*)sReadBuffer;
+    if (bhead->tag != 'BLCK' || bhead->mSize == 0 || bhead->mSize > sBlockSize ||
+        u64(bhead->mSize) * mChannelNum > size - sizeof(BlockHeader)) {
+        hasErrored = true;
+        return false;
+    }
     JUT_ASSERT(512, bhead->tag == 'BLCK');
     if (mIsCancelled != 0) {
         return false;
