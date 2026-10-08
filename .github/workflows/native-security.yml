@@ -20,3 +20,5 @@ jobs:
         run: python3 tests/direct_print_bounds.py
       - name: Check patched ELF section table bounds
         run: python3 tests/libunwind_section_bounds.py
+      - name: Check audio stream metadata and block bounds
+        run: python3 tests/audio_stream_bounds.py
